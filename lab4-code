@@ -1,0 +1,82 @@
+class Node:
+    def __init__(self, data, level, fval):
+        self.data = data
+        self.level = level
+        self.fval = fval
+
+    def generate_child(self):
+        x, y = self.find_blank()
+        moves = [(x, y-1), (x, y+1), (x-1, y), (x+1, y)]
+        children = []
+        for new_x, new_y in moves:
+            child_data = self.move_blank(x, y, new_x, new_y)
+            if child_data:
+                child_node = Node(child_data, self.level + 1, 0)
+                children.append(child_node)
+        return children
+
+    def move_blank(self, x1, y1, x2, y2):
+        if 0 <= x2 < len(self.data) and 0 <= y2 < len(self.data[0]):
+            new_data = [row[:] for row in self.data]
+            new_data[x1][y1], new_data[x2][y2] = new_data[x2][y2], new_data[x1][y1]
+            return new_data
+        return None
+
+    def find_blank(self):
+        for i, row in enumerate(self.data):
+            if '_' in row:
+                return i, row.index('_')
+
+
+class Puzzle:
+    def __init__(self, size):
+        self.size = size
+        self.open = []
+        self.closed = []
+
+    def get_input(self):
+        return [input().split() for _ in range(self.size)]
+
+    def f(self, start, goal):
+        return start.level + self.h(start.data, goal)
+
+    def h(self, start_data, goal):
+
+        return sum(start_data[i][j] != goal[i][j] and start_data[i][j] != '_' for i in range(self.size) for j in range(self.size))
+
+    def process(self):
+        print("Enter the start state matrix:")
+        start_data = self.get_input()
+        print("Enter the goal state matrix:")
+        goal = self.get_input()
+
+        start_node = Node(start_data, 0, 0)
+        start_node.fval = self.f(start_node, goal)
+        self.open.append(start_node)
+
+        while self.open:
+            current_node = self.open.pop(0)
+            self.display_state(current_node, goal)
+
+            if self.h(current_node.data, goal) == 0:
+                print("Goal reached!")
+                break
+
+            children = current_node.generate_child()
+            for child in children:
+                child.fval = self.f(child, goal)
+                self.open.append(child)
+
+            self.closed.append(current_node)
+            self.open.sort(key=lambda node: node.fval)
+
+    def display_state(self, node, goal):
+        print("\nNext step:")
+        for row in node.data:
+            print(" ".join(row))
+        heuristic_value = self.h(node.data, goal)
+        print(f"Heuristic (h): {heuristic_value}")
+        print(f"Function value (f = g + h): {node.fval}")
+
+puz = Puzzle(3)
+puz.process()
